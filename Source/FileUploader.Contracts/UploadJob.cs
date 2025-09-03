@@ -9,7 +9,7 @@ namespace FileUploader.Contracts
         public string FileName { get; }
         public string TempPath { get; }
         public long FileSize { get; }
-        public int Attempt { get; }
+        public int Attempt { get; set; }
 
         public UploadJob(Guid jobId, Guid fileId, string fileName, string tempPath, long fileSize, int attempt = 0)
         {
