@@ -55,7 +55,7 @@ namespace FileUploader.Client.ViewModel
         private async void OnUploadFilesImpln()
         {
             await EnsureRedis();
-            var http = new HttpClient { BaseAddress = new Uri("http://localhost:8080") };
+            var http = new HttpClient { BaseAddress = new Uri("http://localhost:65408") };
 
             foreach (var f in Files.Where(x => !x.IsDone && x.JobId == Guid.Empty))
             {

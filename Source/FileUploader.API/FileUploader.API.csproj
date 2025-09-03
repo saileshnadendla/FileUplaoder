@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<PublishDir>..\..\..\bin\x64\debug</PublishDir>
+		<OutputPath>..\..\..\bin\x64\debug\</OutputPath>
+		<BaseOutputPath>..\..\..\bin\x64\debug\</BaseOutputPath>
+		<SelfContained>true</SelfContained>
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+	</PropertyGroup>
+	<ItemGroup>
+	  <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.3.0" />
+	  <PackageReference Include="StackExchange.Redis" Version="2.9.11" />
+	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\FileUploader.Contracts\FileUploader.Contracts.csproj" />
+	</ItemGroup>
+</Project>
