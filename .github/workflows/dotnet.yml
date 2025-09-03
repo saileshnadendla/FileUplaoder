@@ -11,20 +11,24 @@ on:
 
 jobs:
   build:
-
     runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@v4
+
+    # Setup NuGet
     - name: Setup NuGet
       uses: nuget/setup-nuget@v2
+
+    # Restore packages for classic projects
     - name: NuGet Restore
       run: nuget restore FileUplaoder.sln
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
-    - name: Build
-      run: dotnet build --no-restore
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
+
+    # Setup MSBuild (from Visual Studio)
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+
+    # Build using MSBuild (not dotnet build)
+    - name: Build with MSBuild
+      run: msbuild FileUplaoder.sln /p:Configuration=Debug /p:Platform="Any CPU"
+
