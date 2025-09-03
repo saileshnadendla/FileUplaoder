@@ -1,4 +1,5 @@
 ﻿using FileUploader.Client.Model;
+using FileUploader.Contracts;
 using Microsoft.Win32;
 using Prism.Commands;
 using ServiceStack.Redis;
@@ -12,6 +13,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Threading;
 
 namespace FileUploader.Client.ViewModel
@@ -50,10 +52,10 @@ namespace FileUploader.Client.ViewModel
             }
         }
 
-        private void OnUploadFilesImpln()
+        private async void OnUploadFilesImpln()
         {
-            //await EnsureRedis();
-            //var http = new HttpClient { BaseAddress = new Uri(ApiBaseText.Text) };
+            await EnsureRedis();
+            var http = new HttpClient { BaseAddress = new Uri("http://localhost:8080") };
 
             foreach (var f in Files.Where(x => !x.IsDone && x.JobId == Guid.Empty))
             {
@@ -68,16 +70,16 @@ namespace FileUploader.Client.ViewModel
                             streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
                             form.Add(streamContent, "file", f.FileName);
 
-                            //var resp = await http.PostAsync("/api/upload", form);
-                            //resp.EnsureSuccessStatusCode();
-                            //var payload = await resp.Content.ReadAsStringAsync();
-                            //var doc = JsonDocument.Parse(payload);
-                            //var jobId = doc.RootElement.GetProperty("jobId").GetGuid();
-                            //var fileId = doc.RootElement.GetProperty("fileId").GetGuid();
-                            //f.JobId = jobId;
-                            //f.FileId = fileId;
-                            //f.Status = "Queued";
-                            //f.Progress = 0;
+                            var resp = await http.PostAsync("/api/upload", form);
+                            resp.EnsureSuccessStatusCode();
+                            var payload = await resp.Content.ReadAsStringAsync();
+                            var doc = JsonDocument.Parse(payload);
+                            var jobId = doc.RootElement.GetProperty("jobId").GetGuid();
+                            var fileId = doc.RootElement.GetProperty("fileId").GetGuid();
+                            f.JobId = jobId;
+                            f.FileId = fileId;
+                            f.Status = "Queued";
+                            f.Progress = 0;
                         }
                     }
                 }
@@ -99,13 +101,13 @@ namespace FileUploader.Client.ViewModel
 
             _redis = await ConnectionMultiplexer.ConnectAsync(new RedisText().Text);
             _sub = _redis.GetSubscriber();
-            await _sub.SubscribeAsync("upload:updates", (_, value) =>
+            await _sub.SubscribeAsync("upload:updates", (_, value) => 
             {
                 try
                 {
                     var upd = JsonSerializer.Deserialize<UploadUpdate>(value);
                     if (upd is null) return;
-                    Dispatcher.Invoke(() =>
+                    Application.Current.Dispatcher.Invoke(() =>
                     {
                         var item = Files.FirstOrDefault(f => f.JobId == upd.JobId);
                         if (item == null) return;
