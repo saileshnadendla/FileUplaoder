@@ -32,3 +32,8 @@ jobs:
     - name: Build with MSBuild
       run: msbuild FileUplaoder.sln /p:Configuration=Debug /p:Platform="Any CPU"
 
+    # Run tests using dotnet
+    - name: Run Unit Tests
+      run: dotnet test FileUplaoder.sln --no-build --verbosity normal
+
+
