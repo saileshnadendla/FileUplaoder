@@ -15,8 +15,8 @@ namespace FileUploader.Worker
             builder.Logging.AddSimpleConsole(o => o.SingleLine = true);
 
             var config = builder.Configuration;
-            var redisConn = config.GetValue<string>("Redis:Configuration") ?? "localhost:6379";
-            var mux = await ConnectionMultiplexer.ConnectAsync(redisConn);
+            var redisHost = Environment.GetEnvironmentVariable("REDIS_HOST") ?? "localhost:6379";
+            var mux = await ConnectionMultiplexer.ConnectAsync(redisHost);
             builder.Services.AddSingleton<IConnectionMultiplexer>(mux);
 
             builder.Services.AddHostedService<WorkerService>();

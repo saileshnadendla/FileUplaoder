@@ -11,15 +11,11 @@ namespace FileUploader.Worker
     {
         private readonly ILogger<WorkerService> _logger;
         private readonly IConnectionMultiplexer _redis;
-        private readonly AsyncPolicy _retry;
 
         public WorkerService(ILogger<WorkerService> logger, IConnectionMultiplexer redis)
         {
             _logger = logger;
             _redis = redis;
-            _retry = Policy.Handle<Exception>()
-                           .WaitAndRetryAsync(3, attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)),
-                               (ex, ts, attempt, ctx) => _logger.LogWarning(ex, "Retry {Attempt}", attempt));
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -56,7 +52,7 @@ namespace FileUploader.Worker
                         if (job.Attempt < 3)
                         {
                             job.Attempt++;
-                            await db.ListLeftPushAsync("upload:jobs", JsonSerializer.Serialize(job.Attempt));
+                            await db.ListLeftPushAsync("upload:jobs", JsonSerializer.Serialize(job));
                             await Publish(sub, new UploadUpdate(job.JobId, job.FileId, job.FileName, UploadStatusKind.Queued, 0, $"Retry {job.Attempt}/3"));
                         }
                         else

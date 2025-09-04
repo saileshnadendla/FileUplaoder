@@ -55,7 +55,7 @@ namespace FileUploader.Client.ViewModel
         private async void OnUploadFilesImpln()
         {
             await EnsureRedis();
-            var http = new HttpClient { BaseAddress = new Uri("http://localhost:65408") };
+            var http = new HttpClient { BaseAddress = new Uri("http://localhost:5000") };
 
             foreach (var f in Files.Where(x => !x.IsDone && x.JobId == Guid.Empty))
             {
@@ -91,7 +91,6 @@ namespace FileUploader.Client.ViewModel
             }
         }
 
-
         private ConnectionMultiplexer _redis;
         private ISubscriber _sub;
         private async Task EnsureRedis()
@@ -99,7 +98,7 @@ namespace FileUploader.Client.ViewModel
             if (_redis != null && _redis.IsConnected)
                 return;
 
-            _redis = await ConnectionMultiplexer.ConnectAsync(new RedisText().Text);
+            _redis = await ConnectionMultiplexer.ConnectAsync("localhost:6379");
             _sub = _redis.GetSubscriber();
             await _sub.SubscribeAsync("upload:updates", (_, value) => 
             {

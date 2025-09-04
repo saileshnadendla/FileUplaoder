@@ -1,0 +1,6 @@
+namespace: file-uploader
+
+resources:
+  - fileuploader-namespace.yml
+  - fileuploader-redis-pvc.yml
+  - fileuploader-redis-deployment.yml

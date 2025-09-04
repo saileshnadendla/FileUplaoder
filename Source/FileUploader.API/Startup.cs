@@ -16,8 +16,9 @@ builder.Services.Configure<FormOptions>(o =>
 builder.Services.AddEndpointsApiExplorer();
 
 // Redis Connection
-var redisConn = builder.Configuration.GetValue<string>("Redis:Configuration") ?? "localhost:6379";
-var mux = await ConnectionMultiplexer.ConnectAsync(redisConn);
+var redisHost = Environment.GetEnvironmentVariable("REDIS_HOST") ?? "localhost:6379";
+Console.WriteLine("REDIS_HOST value: " + redisHost);
+var mux = await ConnectionMultiplexer.ConnectAsync(redisHost);
 builder.Services.AddSingleton<IConnectionMultiplexer>(mux);
 
 // Add Controllers

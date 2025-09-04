@@ -1,10 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
+		<OutputType>exe</OutputType>
 		<ImplicitUsings>enable</ImplicitUsings>
-		<PublishDir>..\..\..\bin\x64\debug</PublishDir>
-		<OutputPath>..\..\..\bin\x64\debug\</OutputPath>
-		<BaseOutputPath>..\..\..\bin\x64\debug\</BaseOutputPath>
+		<PublishDir>Publish</PublishDir>
+		<OutputPath>Publish\</OutputPath>
+		<BaseOutputPath>Publish\</BaseOutputPath>
 		<SelfContained>true</SelfContained>
 		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
 		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
