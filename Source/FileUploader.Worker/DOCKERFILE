@@ -1,0 +1,7 @@
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-windowsservercore-ltsc2022 AS base
+
+WORKDIR /app
+
+COPY . .
+
+ENTRYPOINT ["FileUploader.Worker.exe"]

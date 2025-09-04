@@ -1,0 +1,10 @@
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-windowsservercore-ltsc2022 AS base
+
+WORKDIR /app
+
+COPY . .
+
+EXPOSE 5000
+EXPOSE 5001
+
+ENTRYPOINT ["FileUploader.API.exe", "--urls", "http://+:5000"]

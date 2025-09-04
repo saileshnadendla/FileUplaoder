@@ -12,11 +12,31 @@
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 	</PropertyGroup>
 	<ItemGroup>
+	  <None Remove="Deploy\Artifacts\Redis\fileuploader-redis-service.yml" />
+	  <None Remove="Deploy\Artifacts\Server\fileuploader-server-deployment.yml" />
+	  <None Remove="Deploy\Artifacts\Server\kustomization.yml" />
+	  <None Remove="Deploy\Artifacts\Worker\fileuploader-worker-deployment.yml" />
+	  <None Remove="Deploy\Artifacts\Worker\kustomization.yml" />
 	  <None Remove="Deploy\Scripts\stop.ps1" />
 	  <None Remove="DOCKERFILE" />
 	  <None Remove="Deploy\Scripts\start.ps1" />
 	</ItemGroup>
 	<ItemGroup>
+	  <Content Include="Deploy\Artifacts\Redis\fileuploader-redis-service.yml">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Deploy\Artifacts\Server\fileuploader-server-deployment.yml">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Deploy\Artifacts\Server\kustomization.yml">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Deploy\Artifacts\Worker\fileuploader-worker-deployment.yml">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Deploy\Artifacts\Worker\kustomization.yml">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
 	  <Content Include="Deploy\Scripts\stop.ps1">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
