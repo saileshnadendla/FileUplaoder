@@ -1,0 +1,39 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: .NET
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    # Setup NuGet
+    - name: Setup NuGet
+      uses: nuget/setup-nuget@v2
+
+    # Restore packages for classic projects
+    - name: NuGet Restore
+      run: nuget restore FileUplaoder.sln
+
+    # Setup MSBuild (from Visual Studio)
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+
+    # Build using MSBuild (not dotnet build)
+    - name: Build with MSBuild
+      run: msbuild FileUplaoder.sln /p:Configuration=Debug /p:Platform="Any CPU"
+
+    # Run tests using dotnet
+    - name: Run Unit Tests
+      run: dotnet test FileUplaoder.sln --no-build --verbosity normal
+
+
