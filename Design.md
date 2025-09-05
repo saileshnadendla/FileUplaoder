@@ -31,3 +31,9 @@ sequenceDiagram
         Worker->>RedisPub: Publish "Failed after 5 retries"
         RedisPub-->>User: Notify "Final failure"
     end
+
+    %% Download flow
+    User->>API: GET file (JobId)
+    API->>Storage: Fetch file (by JobId)
+    Storage-->>API: Return file
+    API-->>User: Return file (download)
