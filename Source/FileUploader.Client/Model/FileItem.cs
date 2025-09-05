@@ -16,14 +16,14 @@ namespace FileUploader.Client.Model
         public bool IsAvailableForDownload { get => this.Status == UploadStatusKind.Completed.ToString(); }
 
         private string _status = "Ready";
-        public string Status { get => _status; set { _status = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsAvailableForDownload)); } }
+        public string Status { get => _status; set { _status = value; OnPropertyChanged(nameof(Status)); OnPropertyChanged(nameof(IsAvailableForDownload)); } }
 
         private int _progress;
-        public int Progress { get => _progress; set { _progress = value; OnPropertyChanged(); } }
+        public int Progress { get => _progress; set { _progress = value; OnPropertyChanged(nameof(Progress)); } }
 
         public bool IsDone { get; set; }
 
         public event PropertyChangedEventHandler PropertyChanged;
-        void OnPropertyChanged([CallerMemberName] string n = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
+        void OnPropertyChanged(string n) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
     }
 }
