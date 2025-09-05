@@ -64,7 +64,7 @@ namespace FileUploader.Client.View
         private void QueuedFiles_Filter(object sender, FilterEventArgs e)
         {
             if (e.Item is FileItem file)
-                e.Accepted = file.Status == "Queued";
+                e.Accepted = file.Status == "Queued" || file.Status == "InProgress";
         }
 
         private void CompletedFiles_Filter(object sender, FilterEventArgs e)

@@ -61,6 +61,7 @@ namespace FileUploader.Worker
                         {
                             var uploadUpdate = new UploadUpdate(job.JobId, job.FileName, UploadStatusKind.Failed, 0, job.FileSize, "Max retries exceeded");
                             await db.ListLeftPushAsync("upload:jobs:dlq", JsonSerializer.Serialize(job));
+                            await db.ListLeftPushAsync("upload:completedjobs", JsonSerializer.Serialize(uploadUpdate));
                             await PublishToRedis(sub, uploadUpdate);
                         }
                     }
