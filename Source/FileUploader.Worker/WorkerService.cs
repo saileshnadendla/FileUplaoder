@@ -1,8 +1,8 @@
 ﻿using FileUploader.Contracts;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Polly;
 using StackExchange.Redis;
+using System.Net.Http.Headers;
 using System.Text.Json;
 
 namespace FileUploader.Worker
@@ -29,7 +29,6 @@ namespace FileUploader.Worker
             {
                 try
                 {
-                    // Blocking pop: use RPOP (we used LPUSH in API)
                     var res = await db.ListRightPopAsync("upload:jobs");
                     if (res.IsNullOrEmpty)
                     {
@@ -37,15 +36,18 @@ namespace FileUploader.Worker
                         continue;
                     }
 
-                    var job = JsonSerializer.Deserialize<UploadJob>(res.ToString())!;
+                    var job = JsonSerializer.Deserialize<UploadJob>(res.ToString());
                     _logger.LogInformation("Picked job {JobId} for {FileName}", job.JobId, job.FileName);
-                    await Publish(sub, new UploadUpdate(job.JobId, job.FileId, job.FileName, UploadStatusKind.InProgress, 0, null));
+                    await PublishToRedis(sub, new UploadUpdate(job.JobId, job.FileName, UploadStatusKind.InProgress, 0, job.FileSize, null));
 
                     var success = await ProcessJob(job, sub, stoppingToken);
 
                     if (success)
                     {
-                        await Publish(sub, new UploadUpdate(job.JobId, job.FileId, job.FileName, UploadStatusKind.Completed, 100, null));
+                        var uploadUpdate = new UploadUpdate(job.JobId, job.FileName, UploadStatusKind.Completed, 100, job.FileSize, null);
+                        await PublishToRedis(sub, uploadUpdate);
+
+                        await db.ListLeftPushAsync("upload:completedjobs", JsonSerializer.Serialize(uploadUpdate));
                     }
                     else
                     {
@@ -53,16 +55,16 @@ namespace FileUploader.Worker
                         {
                             job.Attempt++;
                             await db.ListLeftPushAsync("upload:jobs", JsonSerializer.Serialize(job));
-                            await Publish(sub, new UploadUpdate(job.JobId, job.FileId, job.FileName, UploadStatusKind.Queued, 0, $"Retry {job.Attempt}/3"));
+                            await PublishToRedis(sub, new UploadUpdate(job.JobId, job.FileName, UploadStatusKind.Queued, 0, job.FileSize, $"Retry {job.Attempt}/3"));
                         }
                         else
                         {
+                            var uploadUpdate = new UploadUpdate(job.JobId, job.FileName, UploadStatusKind.Failed, 0, job.FileSize, "Max retries exceeded");
                             await db.ListLeftPushAsync("upload:jobs:dlq", JsonSerializer.Serialize(job));
-                            await Publish(sub, new UploadUpdate(job.JobId, job.FileId, job.FileName, UploadStatusKind.Failed, 0, "Max retries exceeded"));
+                            await PublishToRedis(sub, uploadUpdate);
                         }
                     }
                 }
-                catch (TaskCanceledException) { }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Worker loop error");
@@ -75,46 +77,30 @@ namespace FileUploader.Worker
         {
             try
             {
-                var temp = new FileInfo(job.TempPath);
-                if (!temp.Exists) throw new FileNotFoundException("Staged file missing", job.TempPath);
+                using (var form = new MultipartFormDataContent())
+                {
+                    using (var stream = File.OpenRead(job.FilePath))
+                    {
+                        var http = new HttpClient { BaseAddress = new Uri("http://localhost:5000") };
+                        var streamContent = new StreamContent(stream);
+                        streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                        form.Add(streamContent, "file", job.FileName);
+                        form.Add(new StringContent(job.JobId.ToString()), "jobId");
 
-                // Simulate cloud upload by copying to Uploads folder under worker base
-                var uploadsRoot = Path.Combine(AppContext.BaseDirectory, "Uploads");
-                Directory.CreateDirectory(uploadsRoot);
-                var dest = Path.Combine(uploadsRoot, $"{job.FileId}_{job.FileName}");
+                        var resp = await http.PostAsync("/api/upload", form);
 
-                using var src = new FileStream(job.TempPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                using var dst = new FileStream(dest, FileMode.Create, FileAccess.Write, FileShare.None);
-                await CopyWithProgress(src, dst, job, sub, ct);
-
-                // Delete staged file after successful copy
-                try { File.Delete(job.TempPath); } catch { }
-
-                return true;
+                        return resp.IsSuccessStatusCode;
+                    }
+                }
             }
             catch (Exception ex)
             {
-                await Publish(_redis.GetSubscriber(), new UploadUpdate(job.JobId, job.FileId, job.FileName, UploadStatusKind.Failed, 0, ex.Message));
+                await PublishToRedis(_redis.GetSubscriber(), new UploadUpdate(job.JobId, job.FileName, UploadStatusKind.Failed, 0, job.FileSize, ex.Message));
                 return false;
             }
         }
 
-        private static async Task CopyWithProgress(Stream source, Stream target, UploadJob job, ISubscriber sub, CancellationToken ct)
-        {
-            byte[] buffer = new byte[256 * 1024];
-            long total = 0;
-            int read;
-            while ((read = await source.ReadAsync(buffer.AsMemory(0, buffer.Length), ct)) > 0)
-            {
-                await target.WriteAsync(buffer.AsMemory(0, read), ct);
-                total += read;
-                var pct = (int)(total * 100 / Math.Max(1, job.FileSize));
-                await Publish(sub, new UploadUpdate(job.JobId, job.FileId, job.FileName, UploadStatusKind.InProgress, pct, null));
-            }
-            await target.FlushAsync(ct);
-        }
-
-        private static Task<long> Publish(ISubscriber sub, UploadUpdate update)
+        private static Task<long> PublishToRedis(ISubscriber sub, UploadUpdate update)
             => sub.PublishAsync("upload:updates", JsonSerializer.Serialize(update));
     }
 }

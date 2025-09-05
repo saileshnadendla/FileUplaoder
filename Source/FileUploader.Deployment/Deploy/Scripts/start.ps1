@@ -13,32 +13,12 @@ function Main {
         $status = $pod.items[0].status.phase
     } while ($status -ne "Running")
 
-    Write-Host "Applying Server..."
-    kubectl apply -k "$scriptDir\..\Artifacts\Server"
-
-    Write-Host "Waiting for Server pod to be up"
-    do{
-        $pod = kubectl get pods -n file-uploader -l app=fileuploader-api -o json | ConvertFrom-Json
-        if ($pod.items.Count -eq 0) { continue }
-        $status = $pod.items[0].status.phase
-    } while ($status -ne "Running")
-
-    Write-Host "Applying Worker..."
-    kubectl apply -k "$scriptDir\..\Artifacts\Worker"
-
-    Write-Host "Waiting for Worker pod to be up"
-    do{
-        $pod = kubectl get pods -n file-uploader -l app=fileuploader-worker -o json | ConvertFrom-Json
-        if ($pod.items.Count -eq 0) { continue }
-        $status = $pod.items[0].status.phase
-    } while ($status -ne "Running")
-
-
-
-    Start-Process powershell -ArgumentList "kubectl port-forward deployment/fileuploader-api 5000:5000 -n file-uploader"
+    
     Start-Process powershell -ArgumentList "kubectl port-forward deployment/fileuploader-redis 6379:6379 -n file-uploader"
 
+    Start-Process -FilePath "..\..\APIServer\FileUploader.API.exe"
 
+    Start-Process -FilePath "..\..\Worker\FileUploader.Worker.exe"
 
     Write-Host "All done!"
 }

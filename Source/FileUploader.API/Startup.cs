@@ -1,33 +1,42 @@
 ﻿using Microsoft.AspNetCore.Http.Features;
 using StackExchange.Redis;
 
-var builder = WebApplication.CreateBuilder(args);
-
-// ----------------------------
-// 1. Configure Services
-// ----------------------------
-
-// Allow large file uploads (up to 1 GB)
-builder.Services.Configure<FormOptions>(o =>
+namespace FileUploader.API
 {
-    o.MultipartBodyLengthLimit = 1024L * 1024L * 1024L;
-});
+    public class Startup
+    {
+        public static void Main(string[] args)
+        {
+            var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddEndpointsApiExplorer();
+            // ----------------------------
+            // 1. Configure Services
+            // ----------------------------
 
-// Redis Connection
-var redisHost = Environment.GetEnvironmentVariable("REDIS_HOST") ?? "localhost:6379";
-Console.WriteLine("REDIS_HOST value: " + redisHost);
-var mux = await ConnectionMultiplexer.ConnectAsync(redisHost);
-builder.Services.AddSingleton<IConnectionMultiplexer>(mux);
+            // Allow large file uploads (up to 1 GB)
+            builder.Services.Configure<FormOptions>(o =>
+            {
+                o.MultipartBodyLengthLimit = 1024L * 1024L * 1024L;
+            });
 
-// Add Controllers
-builder.Services.AddControllers();
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.Limits.MaxRequestBodySize = 1024L * 1024L * 1024L; // 1 GB
+            });
 
-var app = builder.Build();
+            builder.Services.AddEndpointsApiExplorer();
 
 
-app.UseHttpsRedirection();
-app.MapControllers();
+            // Add Controllers
+            builder.Services.AddControllers();
 
-app.Run();
+            var app = builder.Build();
+
+
+            app.UseHttpsRedirection();
+            app.MapControllers();
+
+            app.Run();
+        }
+    }
+}

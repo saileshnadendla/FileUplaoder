@@ -10,13 +10,20 @@
             <Button Content="Select Files" Width="120" Margin="0,0,8,0" Command="{Binding OnSelectFiles}"/>
             <Button Content="Upload" Width="120" Command="{Binding OnUploadFiles}"/>
         </StackPanel>
-        <DataGrid x:Name="Grid" AutoGenerateColumns="False" Margin="8" ItemsSource="{Binding Files}">
+        <DataGrid x:Name="Grid" AutoGenerateColumns="False" Margin="8" ItemsSource="{Binding Files}" CanUserAddRows="False">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="JobId" Binding="{Binding JobId}" Width="220"/>
                 <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="*"/>
                 <DataGridTextColumn Header="Size (MB)" Binding="{Binding SizeMB}" Width="110"/>
                 <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="120"/>
                 <DataGridTextColumn Header="Progress" Binding="{Binding Progress}" Width="100"/>
+                <DataGridTemplateColumn Header="Download" Width="120">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button IsEnabled="{Binding IsAvailableForDownload}" Content="Download" Command="{Binding DataContext.DownloadCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
     </DockPanel>

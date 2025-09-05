@@ -2,19 +2,15 @@
 using FileUploader.Contracts;
 using Microsoft.Win32;
 using Prism.Commands;
-using ServiceStack.Redis;
 using StackExchange.Redis;
 using System;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Threading;
 
 namespace FileUploader.Client.ViewModel
 {
@@ -24,11 +20,18 @@ namespace FileUploader.Client.ViewModel
 
         public DelegateCommand OnSelectFiles { get; private set; }
         public DelegateCommand OnUploadFiles { get; private set; }
+        public DelegateCommand<FileItem> DownloadCommand { get; private set; }
 
         public FileUploaderClientViewModel()
         {
             OnSelectFiles = new DelegateCommand(OnSelectFilesImpln, () => true);
             OnUploadFiles = new DelegateCommand(OnUploadFilesImpln, () => true);
+            DownloadCommand = new DelegateCommand<FileItem>(OnDownloadFile);
+
+            _ = EnsureRedis();
+            _ = SubscribeToJobStatus();
+
+            Files = new ObservableCollection<FileItem>(Files.Where(x => x.JobId != Guid.Empty && !string.IsNullOrEmpty(x.FileName)).ToList());
         }
 
         private void OnSelectFilesImpln()
@@ -46,7 +49,8 @@ namespace FileUploader.Client.ViewModel
                         FileSize = fi.Length,
                         SizeMB = (fi.Length / 1024d / 1024d).ToString("F2"),
                         Status = "Ready",
-                        Progress = 0
+                        Progress = 0,
+                        JobId = Guid.NewGuid()
                     });
                 }
             }
@@ -54,34 +58,23 @@ namespace FileUploader.Client.ViewModel
 
         private async void OnUploadFilesImpln()
         {
-            await EnsureRedis();
-            var http = new HttpClient { BaseAddress = new Uri("http://localhost:5000") };
+            if (_redis == null)
+            {
+                _redis = await ConnectionMultiplexer.ConnectAsync("localhost:6379");
+            }
 
-            foreach (var f in Files.Where(x => !x.IsDone && x.JobId == Guid.Empty))
+            foreach (var f in Files.Where(x => !x.IsDone))
             {
                 try
                 {
-                    using (var form = new MultipartFormDataContent())
-                    {
-                        using (var stream = File.OpenRead(f.FilePath))
-                        {
-                            Debugger.Launch();
-                            var streamContent = new StreamContent(stream);
-                            streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-                            form.Add(streamContent, "file", f.FileName);
+                    f.Status = "Queued";
+                    f.Progress = 0;
 
-                            var resp = await http.PostAsync("/api/upload", form);
-                            resp.EnsureSuccessStatusCode();
-                            var payload = await resp.Content.ReadAsStringAsync();
-                            var doc = JsonDocument.Parse(payload);
-                            var jobId = doc.RootElement.GetProperty("jobId").GetGuid();
-                            var fileId = doc.RootElement.GetProperty("fileId").GetGuid();
-                            f.JobId = jobId;
-                            f.FileId = fileId;
-                            f.Status = "Queued";
-                            f.Progress = 0;
-                        }
-                    }
+                    var job = new UploadJob(f.JobId, f.FilePath, f.FileName, f.SizeMB, 0);
+                    var payload = JsonSerializer.Serialize(job);
+
+                    var db = _redis.GetDatabase();
+                    await db.ListLeftPushAsync("upload:jobs", payload);
                 }
                 catch (Exception ex)
                 {
@@ -91,16 +84,79 @@ namespace FileUploader.Client.ViewModel
             }
         }
 
+        private async void OnDownloadFile(FileItem file)
+        {
+            string apiUrl = $"http://localhost:5000/api/upload/download/{file.JobId}_{file.FileName}";
+
+            using (var client = new HttpClient())
+            {
+                try
+                {
+                    var response = await client.GetAsync(apiUrl);
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        MessageBox.Show("Failed to download file: " + response.ReasonPhrase);
+                        return;
+                    }
+
+                    var fileBytes = await response.Content.ReadAsByteArrayAsync();
+
+                    var saveFileDialog = new SaveFileDialog();
+                    saveFileDialog.FileName = file.FileName;
+                    saveFileDialog.Filter = "All files (*.*)|*.*";
+
+                    if (saveFileDialog.ShowDialog() == true)
+                    {
+                        File.WriteAllBytes(saveFileDialog.FileName, fileBytes);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error: " + ex.Message);
+                }
+            }
+        }
+
         private ConnectionMultiplexer _redis;
         private ISubscriber _sub;
         private async Task EnsureRedis()
         {
-            if (_redis != null && _redis.IsConnected)
-                return;
+            if (_redis == null)
+            {
+                _redis = await ConnectionMultiplexer.ConnectAsync("localhost:6379");
+            }
 
-            _redis = await ConnectionMultiplexer.ConnectAsync("localhost:6379");
+            var db = _redis.GetDatabase();
+            var items = await db.ListRangeAsync("upload:completedjobs", 0, -1);
+            foreach (var item in items)
+            {
+                var itemStr = (string)item;
+                var uploadUpdate = JsonSerializer.Deserialize<UploadUpdate>(itemStr);
+
+                var file = new FileItem
+                {
+                    JobId = uploadUpdate.JobId,
+                    FileName = uploadUpdate.FileName,
+                    SizeMB = uploadUpdate.FileSize,
+                    IsDone = true,
+                    Status = uploadUpdate.Status.ToString(),
+                    Progress = uploadUpdate.ProgressPercent
+                };
+
+                Files.Add(file);
+            }
+        }
+
+        private async Task SubscribeToJobStatus()
+        {
+            if (_redis == null)
+            {
+                _redis = await ConnectionMultiplexer.ConnectAsync("localhost:6379");
+            }
+
             _sub = _redis.GetSubscriber();
-            await _sub.SubscribeAsync("upload:updates", (_, value) => 
+            await _sub.SubscribeAsync("upload:updates", (_, value) =>
             {
                 try
                 {

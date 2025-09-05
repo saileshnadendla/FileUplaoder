@@ -1,48 +1,28 @@
 ﻿using System;
+using System.IO;
 
 namespace FileUploader.Contracts
 {
     public class UploadJob
     {
+        public string FilePath { get; set; }
+
         public Guid JobId { get; }
-        public Guid FileId { get; }
+
         public string FileName { get; }
-        public string TempPath { get; }
-        public long FileSize { get; }
+
+        public string FileSize { get; }
+
         public int Attempt { get; set; }
 
-        public UploadJob(Guid jobId, Guid fileId, string fileName, string tempPath, long fileSize, int attempt = 0)
+        public UploadJob(Guid jobId, string filePath, string fileName, string fileSize, int attempt = 0)
         {
             JobId = jobId;
-            FileId = fileId;
+            FilePath = filePath;
             FileName = fileName;
-            TempPath = tempPath;
             FileSize = fileSize;
             Attempt = attempt;
         }
 
-        public override string ToString()
-        {
-            return $"{FileName} ({FileSize} bytes), Attempt: {Attempt}";
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (obj is UploadJob other)
-            {
-                return JobId == other.JobId &&
-                       FileId == other.FileId &&
-                       FileName == other.FileName &&
-                       TempPath == other.TempPath &&
-                       FileSize == other.FileSize &&
-                       Attempt == other.Attempt;
-            }
-            return false;
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(JobId, FileId, FileName, TempPath, FileSize, Attempt);
-        }
     }
 }

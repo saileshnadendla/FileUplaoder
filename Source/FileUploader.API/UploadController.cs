@@ -1,8 +1,6 @@
-﻿using FileUploader.Contracts;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using StackExchange.Redis;
-using System.Text.Json;
+using Microsoft.AspNetCore.Routing.Constraints;
 
 namespace FileUploader.API
 {
@@ -11,57 +9,71 @@ namespace FileUploader.API
     [AllowAnonymous]
     public class UploadController : ControllerBase
     {
-        private readonly IConnectionMultiplexer _redis;
         private readonly string _inbox;
+        private readonly ILogger<UploadController> _logger;
 
-        public UploadController(IConnectionMultiplexer redis)
+        public UploadController(ILogger<UploadController> logger)
         {
-            _redis = redis;
+            _logger = logger;
             _inbox = Path.Combine(AppContext.BaseDirectory, "Inbox");
             Directory.CreateDirectory(_inbox);
         }
 
         /// <summary>
-        /// Upload a file to the server (staged in Inbox and queued in Redis)
+        /// Upload a file to the server
         /// </summary>
         [HttpPost]
+        [RequestSizeLimit(1024L * 1024L * 1024L)]
         [Consumes("multipart/form-data")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> Upload([FromForm] IFormFile file)
+        public async Task<IActionResult> Upload([FromForm] IFormFile file, [FromForm] string jobId)
         {
-            if (file is null || file.Length == 0)
-                return BadRequest("file missing");
-
-            var jobId = Guid.NewGuid();
-            var fileId = Guid.NewGuid();
-            var fileName = file.FileName ?? "upload.bin";
-            var tempFileName = $"{jobId}_{Path.GetFileName(fileName)}";
-            var tempPath = Path.Combine(_inbox, tempFileName);
-
-            // Save file to Inbox
-            await using (var fs = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            try
             {
-                await file.CopyToAsync(fs);
-                await fs.FlushAsync();
+                if (file is null || file.Length == 0)
+                {
+                    _logger.LogError("file is null or not supported");
+                    return BadRequest("file missing");
+                }
+
+                var fileName = $"{jobId}_{file.FileName}";
+                var tempFileName = Path.GetFileName(fileName);
+                var tempPath = Path.Combine(_inbox, tempFileName);
+
+                await using (var fs = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    await file.CopyToAsync(fs);
+                    await fs.FlushAsync();
+                }
+
+                _logger.LogInformation($"Handled uplaoding file with name {fileName} successfully");
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Unhandled exception while processing file {file.FileName} \n" + ex.Message);
+                return UnprocessableEntity(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Get File from filename
+        /// </summary>
+        [HttpGet("download/{fileName}")]
+        public IActionResult DownloadFile(string fileName)
+        {
+            var filePath = Path.Combine(_inbox, fileName);
+
+            if (!System.IO.File.Exists(filePath))
+            {
+                return NotFound("File not found");
             }
 
-            var size = new FileInfo(tempPath).Length;
-
-            // Create job payload
-            var job = new UploadJob(jobId, fileId, fileName, tempPath, size, 0);
-            var payload = JsonSerializer.Serialize(job);
-
-            // Push job into Redis queue
-            var db = _redis.GetDatabase();
-            await db.ListLeftPushAsync("upload:jobs", payload);
-
-            // Publish queued status update
-            var update = new UploadUpdate(jobId, fileId, fileName, UploadStatusKind.Queued, 0, null);
-            var sub = _redis.GetSubscriber();
-            await sub.PublishAsync("upload:updates", JsonSerializer.Serialize(update));
-
-            return Ok(new { jobId, fileId, fileName, size });
+            // Return file as a download
+            var contentType = "application/octet-stream"; // generic for binary files
+            var fileBytes = System.IO.File.ReadAllBytes(filePath);
+            return File(fileBytes, contentType, fileName);
         }
 
         /// <summary>

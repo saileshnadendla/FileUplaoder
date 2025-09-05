@@ -13,6 +13,7 @@ namespace FileUploader.Client.ViewModel
     {
         DelegateCommand OnSelectFiles { get; }
         DelegateCommand OnUploadFiles { get; }
+        DelegateCommand<FileItem> DownloadCommand { get; }
 
         ObservableCollection<FileItem> Files { get; }
     }
