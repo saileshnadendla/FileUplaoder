@@ -23,7 +23,16 @@ jobs:
         dotnet-version: '8.0.x'
         
     - name: Build and Test
-      run: dotnet test --configuration Debug --logger "trx;LogFileName=test_results.trx" --results-directory ./TestResults
+      shell: pwsh
+      run: |
+        Get-ChildItem -Recurse -Filter *.csproj | Where-Object { $_.FullName -match "_uTest" } | ForEach-Object {
+        $projName = $_.BaseName
+        dotnet test $_.FullName `
+        --configuration Debug `
+        --logger "trx;LogFileName=${projName}_results.trx" `
+        --results-directory ./TestResults
+        }
+
 
     - name: Upload test results
       if: always()
