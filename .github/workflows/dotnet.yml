@@ -13,50 +13,10 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    # Setup NuGet
-    - name: Setup NuGet
-      uses: nuget/setup-nuget@v2
-
-    # Restore packages for classic projects
-    - name: NuGet Restore
-      run: nuget restore FileUplaoder.sln
-
-    # Setup MSBuild (from Visual Studio)
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v2
-
-    # Build with MSBuild
-    - name: Build with MSBuild
-      run: msbuild FileUplaoder.sln /p:Configuration=Debug /p:Platform="Any CPU"
-
-    - name: Install NUnit Console Runner
-      run: nuget install NUnit.ConsoleRunner -Version 3.20.1 -OutputDirectory testrunner
-
-    - name: Setup .NET 8
+    - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
-
-    - name: Install .NET 8 Runtime
-      run: |
-        choco install dotnet-8.0-runtime -y --version=8.0.19
-
-
-
-
-    # Locate vstest.console.exe
-    - name: Locate vstest.console.exe
-      run: Get-ChildItem "C:\Program Files\Microsoft Visual Studio\2022" -Recurse -Filter vstest.console.exe
-
-    # Run NUnit Tests with vstest.console.exe
-    - name: Run Unit Tests
-      run: dotnet test FileUplaoder.sln --configuration Debug --no-build --logger "trx;LogFileName=test_results.trx"
-
-
-
-    # Publish test results as GitHub artifact
-    - name: Upload Test Results
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results
-        path: TestResults
+        
+    - name: Build and Test
+      run: dotnet test --configuration Debug
