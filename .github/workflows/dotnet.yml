@@ -32,6 +32,12 @@ jobs:
     - name: Install NUnit Console Runner
       run: nuget install NUnit.ConsoleRunner -Version 3.20.1 -OutputDirectory testrunner
 
+    - name: Setup .NET 8
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+
 
     # Locate vstest.console.exe
     - name: Locate vstest.console.exe
