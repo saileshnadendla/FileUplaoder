@@ -49,18 +49,9 @@ jobs:
       run: Get-ChildItem "C:\Program Files\Microsoft Visual Studio\2022" -Recurse -Filter vstest.console.exe
 
     # Run NUnit Tests with vstest.console.exe
-    - name: Run Unit Tests (classic NUnit)
-      run: |
-        $testDlls = Get-ChildItem -Path "${{ github.workspace }}\..\bin\x64\debug" -Recurse -Include *_uTest.dll | Select-Object -ExpandProperty FullName
-        if ($testDlls.Count -eq 0) {
-            Write-Error "❌ No test DLLs found under bin\x64\debug"
-        exit 1
-        }
+    - name: Run Unit Tests
+      run: dotnet test FileUplaoder.sln --configuration Debug --no-build --logger "trx;LogFileName=test_results.trx"
 
-        & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
-        $testDlls `
-        /Logger:trx `
-        /ResultsDirectory:TestResults
 
 
     # Publish test results as GitHub artifact
