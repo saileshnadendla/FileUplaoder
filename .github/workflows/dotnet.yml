@@ -30,7 +30,8 @@ jobs:
       run: msbuild FileUplaoder.sln /p:Configuration=Debug /p:Platform="Any CPU"
 
     - name: Install NUnit Console Runner
-      run: nuget install NUnit.ConsoleRunner -Version 4.4.0 -OutputDirectory testrunner
+      run: nuget install NUnit.ConsoleRunner -Version 3.20.1 -OutputDirectory testrunner
+
 
     # Locate vstest.console.exe
     - name: Locate vstest.console.exe
