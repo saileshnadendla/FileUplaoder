@@ -9,42 +9,56 @@ on:
 jobs:
   build_and_test:
     runs-on: windows-latest
+    
     steps:
     - uses: actions/checkout@v4
-    - name: Setup .NET
+    
+    - name: Setup .NET SDK
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
-    - name: Run Tests
-      run: dotnet test --configuration Debug --logger "trx;LogFileName=test_results.trx"
-    - name: Publish Test Results
+        
+    - name: Build and Run Tests
+      # The '--logger' flag generates a TRX file for each test project
+      # The '**/*.csproj' pattern ensures all test projects are found and tested
+      run: dotnet test "**/*.csproj" --configuration Debug --logger "trx;LogFileName=test_results.trx"
+      
+    - name: Publish Test Results as Artifact
+      # This step uploads the generated test result files for the next job
       uses: actions/upload-artifact@v4
       with:
         name: test-results
-        path: |
-          **/TestResults/test_results.trx
-
+        path: '**/TestResults/test_results.trx'
+        
   report:
-    runs-on: windows-latest
+    # This job needs the previous job to complete successfully
     needs: build_and_test
-    steps:
-    - uses: actions/checkout@v4 # Add this line to check out the repository
+    runs-on: ubuntu-latest # Using ubuntu for the report job can sometimes be faster
     
-    - name: Download Test Results
+    # This block explicitly grants the necessary permissions to the GITHUB_TOKEN
+    permissions:
+      checks: write
+      
+    steps:
+    - uses: actions/checkout@v4 # Essential for accessing the Git repository
+    
+    - name: Download Test Results Artifact
+      # Downloads the test results from the 'build_and_test' job
       uses: actions/download-artifact@v4
       with:
         name: test-results
         path: TestResults
         
-    - name: Consolidate and Publish Report
+    - name: Publish Consolidated Report to GitHub Checks
+      # This action consolidates all TRX files and creates a single check run
       uses: dorny/test-reporter@v1
       with:
-        name: Consolidated Test Results
-        path: 'TestResults/**/*.trx'
+        name: Consolidated Test Report
+        path: 'TestResults/**/*.trx' # Matches all TRX files in all subdirectories
         reporter: dotnet-trx
         token: ${{ secrets.GITHUB_TOKEN }}
-        list-suites: all
-        list-tests: failed
+        list-suites: all # Displays all test suites in the report
+        list-tests: failed # Only lists failed tests for a cleaner view
         fail-on-error: true
         fail-on-empty: true
         only-summary: false
