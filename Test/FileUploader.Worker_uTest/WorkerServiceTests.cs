@@ -16,7 +16,7 @@ namespace FileUploader.Worker_uTest
         private Mock<IRedisHelper> _redisHelper;
         
         [Test]
-        public void ExecuteAsync_JobSuccessful_JobPostedToRedis()
+        public async Task ExecuteAsync_JobSuccessful_JobPostedToRedis()
         {
             //Arrange
             UploadJob? completedJob = null;
@@ -39,7 +39,7 @@ namespace FileUploader.Worker_uTest
             _redisHelper.Setup(x => x.PublishToRedis(It.IsAny<UploadUpdate>())).Callback((UploadUpdate update) => progressJobs.Add(update));
 
             //Act
-            sut.StartAsync(cancellationSource.Token);
+            await sut.StartAsync(cancellationSource.Token);
 
             //ASsert
             _redisHelper.Verify(x => x.PushToRedis("upload:completedjobs", It.IsAny<string>()), Times.Once);
@@ -52,7 +52,7 @@ namespace FileUploader.Worker_uTest
         }
 
         [Test]
-        public void ExecuteAsync_JobSuccessfulOnRetry_JobPostedToRedis()
+        public async Task ExecuteAsync_JobSuccessfulOnRetry_JobPostedToRedis()
         {
             //Arrange
             UploadJob? completedJob = null;
@@ -83,7 +83,7 @@ namespace FileUploader.Worker_uTest
             _redisHelper.Setup(x => x.PublishToRedis(It.IsAny<UploadUpdate>())).Callback((UploadUpdate update) => progressJobs.Add(update));
 
             //Act
-            sut.StartAsync(cancellationSource.Token);
+            await sut.StartAsync(cancellationSource.Token);
 
             //ASsert
             _redisHelper.Verify(x => x.PushToRedis("upload:completedjobs", It.IsAny<string>()), Times.Once);
@@ -100,7 +100,7 @@ namespace FileUploader.Worker_uTest
         }
 
         [Test]
-        public void ExecuteAsync_JobExceededRetries_JobFailurePostedToRedis()
+        public async Task ExecuteAsync_JobExceededRetries_JobFailurePostedToRedis()
         {
             //Arrange
             UploadJob? completedJob = null;
@@ -131,7 +131,7 @@ namespace FileUploader.Worker_uTest
             _redisHelper.Setup(x => x.PublishToRedis(It.IsAny<UploadUpdate>())).Callback((UploadUpdate update) => progressJobs.Add(update));
 
             //Act
-            sut.StartAsync(cancellationSource.Token);
+            await sut.StartAsync(cancellationSource.Token);
 
             //ASsert
             _redisHelper.Verify(x => x.PushToRedis("upload:completedjobs", It.IsAny<string>()), Times.Once);
@@ -146,7 +146,7 @@ namespace FileUploader.Worker_uTest
         }
 
         [Test]
-        public void ExecuteAsync_HttpClientException_JobFailurePostedToRedis()
+        public async Task ExecuteAsync_HttpClientException_JobFailurePostedToRedis()
         {
             //Arrange
             UploadJob? completedJob = null;
@@ -177,7 +177,7 @@ namespace FileUploader.Worker_uTest
             _redisHelper.Setup(x => x.PublishToRedis(It.IsAny<UploadUpdate>())).Callback((UploadUpdate update) => progressJobs.Add(update));
 
             //Act
-            sut.StartAsync(cancellationSource.Token);
+            await sut.StartAsync(cancellationSource.Token);
 
             //ASsert
             _redisHelper.Verify(x => x.PushToRedis("upload:completedjobs", It.IsAny<string>()), Times.Once);
