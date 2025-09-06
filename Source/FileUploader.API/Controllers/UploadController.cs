@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing.Constraints;
 
-namespace FileUploader.API
+namespace FileUploader.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
@@ -19,6 +19,13 @@ namespace FileUploader.API
             Directory.CreateDirectory(_inbox);
         }
 
+        // constructor for testing
+        internal UploadController(ILogger<UploadController> logger, string inbox)
+        {
+            _logger = logger;
+            _inbox = inbox;
+        }
+
         /// <summary>
         /// Upload a file to the server
         /// </summary>
@@ -26,7 +33,7 @@ namespace FileUploader.API
         [RequestSizeLimit(1024L * 1024L * 1024L)]
         [Consumes("multipart/form-data")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)] 
         public async Task<IActionResult> Upload([FromForm] IFormFile file, [FromForm] string jobId)
         {
             try
@@ -41,6 +48,8 @@ namespace FileUploader.API
                 var tempFileName = Path.GetFileName(fileName);
                 var tempPath = Path.Combine(_inbox, tempFileName);
 
+                _logger.LogInformation("Trying to save file to: " + tempPath);
+
                 await using (var fs = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
                     await file.CopyToAsync(fs);
@@ -53,36 +62,8 @@ namespace FileUploader.API
             catch (Exception ex)
             {
                 _logger.LogError($"Unhandled exception while processing file {file.FileName} \n" + ex.Message);
-                return UnprocessableEntity(ex.Message);
+                return UnprocessableEntity("Unhandled exception: " + ex.Message);
             }
-        }
-
-        /// <summary>
-        /// Get File from filename
-        /// </summary>
-        [HttpGet("download/{fileName}")]
-        public IActionResult DownloadFile(string fileName)
-        {
-            var filePath = Path.Combine(_inbox, fileName);
-
-            if (!System.IO.File.Exists(filePath))
-            {
-                return NotFound("File not found");
-            }
-
-            // Return file as a download
-            var contentType = "application/octet-stream"; // generic for binary files
-            var fileBytes = System.IO.File.ReadAllBytes(filePath);
-            return File(fileBytes, contentType, fileName);
-        }
-
-        /// <summary>
-        /// Health Check endpoint
-        /// </summary>
-        [HttpGet("/health")]
-        public IActionResult Health()
-        {
-            return Ok(new { ok = true });
         }
     }
 }

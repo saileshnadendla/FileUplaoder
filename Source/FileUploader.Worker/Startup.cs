@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using FileUploader.Worker.Helpers;
+using FileUploader.Worker.Service;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -18,6 +20,8 @@ namespace FileUploader.Worker
             var redisHost = Environment.GetEnvironmentVariable("REDIS_HOST") ?? "localhost:6379";
             var mux = await ConnectionMultiplexer.ConnectAsync(redisHost);
             builder.Services.AddSingleton<IConnectionMultiplexer>(mux);
+            builder.Services.AddSingleton<IHttpClientHelper>(new HttpClientHelper());
+            builder.Services.AddSingleton<IRedisHelper>(new RedisHelper(mux));
 
             builder.Services.AddHostedService<WorkerService>();
 

@@ -19,7 +19,7 @@ namespace FileUploader.Client.ViewModel
         public ObservableCollection<FileItem> Files { get; } = new ObservableCollection<FileItem>();
 
         public DelegateCommand OnSelectFiles { get; private set; }
-        public DelegateCommand OnUploadFiles { get; private set; }
+        public DelegateCommand OnUploadFiles { get; private set; } 
         public DelegateCommand<FileItem> DownloadCommand { get; private set; }
 
         public FileUploaderClientViewModel()
@@ -86,7 +86,7 @@ namespace FileUploader.Client.ViewModel
 
         private async void OnDownloadFile(FileItem file)
         {
-            string apiUrl = $"http://localhost:5000/api/upload/download/{file.JobId}_{file.FileName}";
+            string apiUrl = $"http://localhost:5000/api/download/{file.JobId}_{file.FileName}";
 
             using (var client = new HttpClient())
             {

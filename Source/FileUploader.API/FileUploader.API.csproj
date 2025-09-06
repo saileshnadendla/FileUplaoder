@@ -12,18 +12,16 @@
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 	</PropertyGroup>
 	<ItemGroup>
-	  <None Remove="DOCKERFILE" />
-	</ItemGroup>
-	<ItemGroup>
-	  <Content Include="DOCKERFILE">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	</ItemGroup>
-	<ItemGroup>
 	  <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.3.0" />
 	  <PackageReference Include="StackExchange.Redis" Version="2.9.11" />
 	</ItemGroup>
 	<ItemGroup>
 	  <ProjectReference Include="..\FileUploader.Contracts\FileUploader.Contracts.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+			<_Parameter1>FileUploader.API_uTest</_Parameter1>
+		</AssemblyAttribute>
 	</ItemGroup>
 </Project>

@@ -3,6 +3,12 @@ function Main {
     $myInstscript = (Get-Item $PSCommandPath ).Basename
     Write-Host "Stop Command Invoked from $myInstscript"
 
+    $processName = "FileUploader.Client"
+    $proc = Get-Process -Name $processName -ErrorAction SilentlyContinue
+    if ($proc) {
+        Stop-Process -Name $processName -Force
+    }
+
     $processName = "FileUploader.API"
     $proc = Get-Process -Name $processName -ErrorAction SilentlyContinue
     if ($proc) {

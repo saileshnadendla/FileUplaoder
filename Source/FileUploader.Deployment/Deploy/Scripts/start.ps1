@@ -20,6 +20,8 @@ function Main {
 
     Start-Process -FilePath "..\..\Worker\FileUploader.Worker.exe"
 
+    Start-Process -FilePath "..\..\FileUploader.Client.exe"
+
     Write-Host "All done!"
 }
 
