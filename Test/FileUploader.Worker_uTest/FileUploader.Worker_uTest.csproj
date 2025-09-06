@@ -7,7 +7,6 @@
 	  <PublishDir>..\..\..\bin\x64\debug\</PublishDir>
 	  <OutputPath>..\..\..\bin\x64\debug\</OutputPath>
 	  <BaseOutputPath>..\..\..\bin\x64\debug\</BaseOutputPath>
-	  <SelfContained>true</SelfContained>
 	  <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	  <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
