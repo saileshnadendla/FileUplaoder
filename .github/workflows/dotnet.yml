@@ -46,6 +46,7 @@ jobs:
         $testDlls `
         /Logger:trx `
         /ResultsDirectory:TestResults
+        /TestAdapterPath:"${{ github.workspace }}\packages"
 
 
     # Publish test results as GitHub artifact
