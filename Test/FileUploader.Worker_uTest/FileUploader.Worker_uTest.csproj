@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+	  <PublishDir>..\..\..\bin\x64\debug\</PublishDir>
+	  <OutputPath>..\..\..\bin\x64\debug\</OutputPath>
+	  <BaseOutputPath>..\..\..\bin\x64\debug\</BaseOutputPath>
+	  <SelfContained>true</SelfContained>
+	  <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+	  <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Moq" Version="4.20.72" />
+    <PackageReference Include="NUnit" Version="4.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Source\FileUploader.Worker\FileUploader.Worker.csproj" />
+  </ItemGroup>
+
+</Project>

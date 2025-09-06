@@ -10,7 +10,7 @@ namespace FileUploader.Worker_uTest
     public class Class1
     {
         [Test]
-        public void Test() 
+        public void Test()
         {
             //Arrange
             var loggerMock = new Mock<ILogger<WorkerService>>();
