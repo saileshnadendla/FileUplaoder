@@ -7,16 +7,38 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  build_and_test:
     runs-on: windows-latest
-
     steps:
     - uses: actions/checkout@v4
-
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
-        
-    - name: Build and Test
-      run: dotnet test --configuration Debug
+    - name: Run Tests
+      run: dotnet test --configuration Debug --logger "trx;LogFileName=test_results.trx"
+    - name: Publish Test Results
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: |
+          **/TestResults/test_results.trx
+
+  report:
+    runs-on: windows-latest
+    needs: build_and_test # This job depends on the successful completion of the build_and_test job
+    steps:
+    - name: Download Test Results
+      uses: actions/download-artifact@v4
+      with:
+        name: test-results
+        path: TestResults
+    - name: Consolidate and Publish Report
+      uses: dorny/test-reporter@v1
+      with:
+        name: Consolidated Test Results
+        path: 'TestResults/**/*.trx' # Path to all TRX files
+        reporter: dotnet-trx
+        token: ${{ secrets.GITHUB_TOKEN }}
+        list-suites: all
+        list-tests: failed
