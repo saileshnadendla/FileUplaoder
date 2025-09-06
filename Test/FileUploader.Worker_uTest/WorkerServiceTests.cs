@@ -41,14 +41,14 @@ namespace FileUploader.Worker_uTest
             //Act
             await sut.StartAsync(cancellationSource.Token);
 
-            //ASsert
-            _redisHelper.Verify(x => x.PushToRedis("upload:completedjobs", It.IsAny<string>()), Times.Once);
-            Assert.NotNull(completedJob);
-            Assert.That(completedJob?.JobId == uploadJob.JobId);
+            //Assert
             Assert.That(progressJobs.Count, Is.EqualTo(2));
             Assert.True(progressJobs.All(x => x.JobId == uploadJob.JobId));
             Assert.That(progressJobs[0].Status == UploadStatusKind.InProgress);
             Assert.That(progressJobs[1].Status == UploadStatusKind.Completed);
+            Assert.NotNull(completedJob);
+            _redisHelper.Verify(x => x.PushToRedis("upload:completedjobs", It.IsAny<string>()), Times.Once);
+            Assert.That(completedJob?.JobId == uploadJob.JobId);
         }
 
         [Test]
@@ -85,10 +85,7 @@ namespace FileUploader.Worker_uTest
             //Act
             await sut.StartAsync(cancellationSource.Token);
 
-            //ASsert
-            _redisHelper.Verify(x => x.PushToRedis("upload:completedjobs", It.IsAny<string>()), Times.Once);
-            Assert.NotNull(completedJob);
-            Assert.That(completedJob?.JobId == uploadJob.JobId);
+            //Assert
             Assert.That(failedJob?.JobId == uploadJob.JobId);
             Assert.That(failedJob?.Attempt, Is.EqualTo(2));
             Assert.That(progressJobs.Count, Is.EqualTo(4));
@@ -97,6 +94,9 @@ namespace FileUploader.Worker_uTest
             Assert.That(progressJobs[1].Status == UploadStatusKind.Queued);
             Assert.That(progressJobs[2].Status == UploadStatusKind.InProgress);
             Assert.That(progressJobs[3].Status == UploadStatusKind.Completed);
+            Assert.NotNull(completedJob);
+            _redisHelper.Verify(x => x.PushToRedis("upload:completedjobs", It.IsAny<string>()), Times.Once);
+            Assert.That(completedJob?.JobId == uploadJob.JobId);
         }
 
         [Test]
@@ -133,16 +133,16 @@ namespace FileUploader.Worker_uTest
             //Act
             await sut.StartAsync(cancellationSource.Token);
 
-            //ASsert
-            _redisHelper.Verify(x => x.PushToRedis("upload:completedjobs", It.IsAny<string>()), Times.Once);
-            Assert.NotNull(completedJob);
-            Assert.That(completedJob?.JobId == uploadJob.JobId);
+            //Assert
             Assert.That(failedJob?.JobId == uploadJob.JobId);
             Assert.That(failedJob?.Attempt, Is.EqualTo(3));
             Assert.That(progressJobs.Count, Is.EqualTo(2));
             Assert.True(progressJobs.All(x => x.JobId == uploadJob.JobId));
             Assert.That(progressJobs[0].Status == UploadStatusKind.InProgress);
             Assert.That(progressJobs[1].Status == UploadStatusKind.Failed);
+            Assert.NotNull(completedJob);
+            _redisHelper.Verify(x => x.PushToRedis("upload:completedjobs", It.IsAny<string>()), Times.Once);
+            Assert.That(completedJob?.JobId == uploadJob.JobId);
         }
 
         [Test]
@@ -179,10 +179,7 @@ namespace FileUploader.Worker_uTest
             //Act
             await sut.StartAsync(cancellationSource.Token);
 
-            //ASsert
-            _redisHelper.Verify(x => x.PushToRedis("upload:completedjobs", It.IsAny<string>()), Times.Once);
-            Assert.NotNull(completedJob);
-            Assert.That(completedJob?.JobId == uploadJob.JobId);
+            //Assert
             Assert.That(failedJob?.JobId == uploadJob.JobId);
             Assert.That(failedJob?.Attempt, Is.EqualTo(2));
             Assert.That(progressJobs.Count, Is.EqualTo(5));
@@ -192,6 +189,9 @@ namespace FileUploader.Worker_uTest
             Assert.That(progressJobs[2].Status == UploadStatusKind.Queued);
             Assert.That(progressJobs[3].Status == UploadStatusKind.InProgress);
             Assert.That(progressJobs[4].Status == UploadStatusKind.Completed);
+            Assert.NotNull(completedJob);
+            _redisHelper.Verify(x => x.PushToRedis("upload:completedjobs", It.IsAny<string>()), Times.Once);
+            Assert.That(completedJob?.JobId == uploadJob.JobId);
         }
     }
 }
