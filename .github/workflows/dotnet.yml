@@ -37,6 +37,11 @@ jobs:
       with:
         dotnet-version: '8.0.x'
 
+    - name: Install .NET 8 Runtime
+      run: |
+        choco install dotnet-8.0-runtime -y --version=8.0.19
+
+
 
 
     # Locate vstest.console.exe
