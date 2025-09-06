@@ -19,4 +19,19 @@ jobs:
         dotnet-version: '8.0.x'
         
     - name: Build and Test
-      run: dotnet test --configuration Debug
+      run: dotnet test --configuration Debug --logger "trx;LogFileName=test_results.trx" --results-directory ./TestResults
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: TestResults
+        path: ./TestResults
+
+    - name: Report Test Results
+      if: always()
+      uses: dorny/test-reporter@v1
+      with:
+        name: NUnit Tests
+        path: ./TestResults/*.trx
+        reporter: dotnet-trx
