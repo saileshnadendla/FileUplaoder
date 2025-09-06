@@ -29,6 +29,9 @@ jobs:
     - name: Build with MSBuild
       run: msbuild FileUplaoder.sln /p:Configuration=Debug /p:Platform="Any CPU"
 
+    - name: Install NUnit Console Runner
+      run: nuget install NUnit.ConsoleRunner -Version 4.4.0 -OutputDirectory testrunner
+
     # Locate vstest.console.exe
     - name: Locate vstest.console.exe
       run: Get-ChildItem "C:\Program Files\Microsoft Visual Studio\2022" -Recurse -Filter vstest.console.exe
@@ -46,7 +49,6 @@ jobs:
         $testDlls `
         /Logger:trx `
         /ResultsDirectory:TestResults
-        /TestAdapterPath:"${{ github.workspace }}\packages"
 
 
     # Publish test results as GitHub artifact
